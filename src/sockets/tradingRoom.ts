@@ -68,7 +68,17 @@ export function registerTradingRoomSockets(io: Server) {
 
   io.on("connection", async (socket) => {
     const user = socket.data.user as SocketUser
-    await upsertUser(user)
+
+    try {
+      await upsertUser(user)
+    } catch (error) {
+      socket.emit("error:server", {
+        code: "USER_UPSERT_FAILED",
+        message: "Could not create or update socket user",
+      })
+      socket.disconnect(true)
+      return
+    }
 
     socket.join("room:global")
 
