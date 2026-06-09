@@ -3,6 +3,8 @@ import express from "express"
 import http from "http"
 import { Server } from "socket.io"
 import { env } from "./config/env"
+import { messagesRouter } from "./routes/messages"
+import { registerTradingRoomSockets } from "./sockets/tradingRoom"
 
 const app = express()
 const server = http.createServer(app)
@@ -14,6 +16,8 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "trading-room-backend" })
 })
 
+app.use("/api/messages", messagesRouter)
+
 const io = new Server(server, {
   cors: {
     origin: env.CORS_ORIGIN,
@@ -21,19 +25,7 @@ const io = new Server(server, {
   },
 })
 
-io.on("connection", (socket) => {
-  socket.emit("connected", {
-    id: socket.id,
-    timestamp: new Date().toISOString(),
-  })
-
-  socket.on("message:send", (payload) => {
-    io.emit("message:new", {
-      ...payload,
-      timestamp: new Date().toISOString(),
-    })
-  })
-})
+registerTradingRoomSockets(io)
 
 server.listen(env.PORT, () => {
   console.log(`Trading Room backend running on port ${env.PORT}`)
