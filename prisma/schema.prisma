@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserPlan {
+  FREE
+  TRIAL
+  PRO
+  PREMIUM
+  ADMIN
+}
+
+model User {
+  id          String        @id
+  email       String?
+  displayName String
+  plan        UserPlan      @default(FREE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  messages    RoomMessage[]
+
+  @@index([plan])
+}
+
+model RoomMessage {
+  id        String   @id @default(cuid())
+  asset     String   @default("GLOBAL")
+  body      String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([asset, createdAt])
+  @@index([authorId, createdAt])
+}
